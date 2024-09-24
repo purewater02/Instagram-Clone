@@ -1,5 +1,5 @@
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import {getAuth, GoogleAuthProvider, signInWithPopup} from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -19,5 +19,14 @@ const firestore = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
 
+const loginWithGoogle = async () => {
+  const provider = new GoogleAuthProvider();
+  const result = await signInWithPopup(auth, provider); // useFirebaseAuth가 알아서 상태 감지해서 userState 갱신함.
+  const idToken = await result.user.getIdToken();
+  console.log("loginWithGoogle token: ", idToken);
+  return idToken;
+}
+
+
 // export
-export { app, auth, firestore, storage };
+export { app, auth, firestore, storage, loginWithGoogle };

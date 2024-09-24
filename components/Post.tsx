@@ -11,7 +11,6 @@ import {
 } from "firebase/firestore";
 import { motion } from "framer-motion";
 import moment from "moment";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 

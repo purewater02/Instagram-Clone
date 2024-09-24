@@ -1,23 +1,34 @@
 import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
 import { motion } from "framer-motion";
-import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import React, { useState, useEffect } from "react";
 
 import HeartTip from "./HeartTip";
 import PostModal from "./modal/PostModal";
 import SearchTip from "./SearchTip";
+import {useRecoilValue} from "recoil";
+import {backendUserState} from "../utils/atoms";
+import {getAuth} from "firebase/auth";
 
 type HeaderProps = {};
 
 const Header: React.FC<HeaderProps> = () => {
-  const { data: session } = useSession();
+  const user = useRecoilValue(backendUserState);
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [heartTipOpen, setHartTipOpen] = useState(true);
   const [searchValue, setSearchValue] = useState("");
+
+  const signOut = () => {
+    const auth = getAuth();
+    auth.signOut().then(() => {
+      console.log("Sign out successful");
+    }).catch((error) => {
+      console.error("Sign out error", error);
+    });
+  };
 
   useEffect(() => {
     setTimeout(() => {
@@ -98,7 +109,7 @@ const Header: React.FC<HeaderProps> = () => {
               <MenuIcon />
             </div>
 
-            {session ? (
+            {user ? (
               <>
                 <div className="relative navBtn">
                   <svg
@@ -173,9 +184,9 @@ const Header: React.FC<HeaderProps> = () => {
                 {heartTipOpen && <HeartTip />}
 
                 <img
-                  onClick={() => signOut()}
+                  onClick={signOut}
                   className="h-10 rounded-full cursor-pointer"
-                  src={session?.user?.image as string}
+                  src={user?.photoURL as string}
                   alt=""
                 />
               </>

@@ -11,12 +11,23 @@ export default NextAuth({
   ],
 
   callbacks: {
+    async jwt({token, account}) {
+      if (account) {
+        token.signInProvider = account.provider;
+        token.accessToken = account.access_token;
+      }
+      return token;
+    },
+
     async session({ session, token, user }: any) {
       session.user.username = session?.user?.name
         .split(" ")
         .join("")
         .toLocaleLowerCase();
 
+      console.log("callback session token: ", token);
+      session.accessToken = token.accessToken;
+      session.user.signInProvider = token.signInProvider;
       session.user.uid = token.sub;
       return session;
     },

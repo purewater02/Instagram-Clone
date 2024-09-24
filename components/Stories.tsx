@@ -1,13 +1,14 @@
 import { faker } from "@faker-js/faker";
-import { useSession } from "next-auth/react";
 import React, { useEffect, useState } from "react";
 
 import Story from "./Story";
+import {useRecoilValue} from "recoil";
+import {backendUserState} from "../utils/atoms";
 
 type StoriesProps = {};
 
 const Stories: React.FC<StoriesProps> = () => {
-  const { data: session } = useSession();
+  const user = useRecoilValue(backendUserState);
   const [suggestions, setSuggestions] = useState<any[]>([]);
 
   useEffect(() => {
@@ -25,8 +26,8 @@ const Stories: React.FC<StoriesProps> = () => {
       className="
     flex space-x-2 p-6 bg-white mt-8 border-gray-200 border rounded-sm overflow-x-scroll scrollbar-thin scrollbar-thumb-black"
     >
-      {session && (
-        <Story img={session?.user?.image!} username={session?.user?.name!} />
+      {user && (
+        <Story img={user?.photoURL!} username={user?.name!} />
       )}
 
       {suggestions.map((profile) => (

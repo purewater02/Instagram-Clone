@@ -3,20 +3,12 @@ import LoopIcon from "@mui/icons-material/Loop";
 import Box from "@mui/material/Box";
 import Modal from "@mui/material/Modal";
 import Typography from "@mui/material/Typography";
-import {
-  addDoc,
-  collection,
-  doc,
-  serverTimestamp,
-  Timestamp,
-  updateDoc,
-} from "firebase/firestore";
-import { getDownloadURL, ref, uploadString } from "firebase/storage";
-import { useSession } from "next-auth/react";
 import React, { useRef, useState } from "react";
+import { createPost } from "../../pages/api/postApi";
 
-import { firestore, storage } from "../../firebase/firebase";
 import useSelectFile from "../../hooks/useSelectFile";
+import {useRecoilValue} from "recoil";
+import {backendUserState, userState} from "../../utils/atoms";
 
 const style = {
   position: "absolute" as "absolute",
@@ -35,7 +27,7 @@ type PostModalProps = {
 };
 
 const PostModal: React.FC<PostModalProps> = ({ open, setOpen }) => {
-  const { data: session } = useSession();
+  const user = useRecoilValue(backendUserState);
   const { selectedFile, setSelectedFile, onSelectedFile } = useSelectFile();
   const selectedFileRef = useRef<HTMLInputElement>(null);
   const [caption, setCaption] = useState("");
@@ -43,35 +35,43 @@ const PostModal: React.FC<PostModalProps> = ({ open, setOpen }) => {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  const handleCreateCommunity = async () => {
+  const base64ToBlob = (base64String: string) => {
+    const parts = base64String.split(",");
+    const mimeType = parts[0].match(/:(.*?);/)?.[1] || ""; // MIME 타입 추출
+    const binary = Buffer.from(parts[1], "base64"); // Base64 부분을 Buffer로 변환
+
+    return new Blob([binary], { type: mimeType });
+  };
+
+  const handleCreatePost = async () => {
     setLoading(true);
     try {
-      const docRef = await addDoc(collection(firestore, "posts"), {
-        userId: session?.user?.uid,
-        username: session?.user?.name,
-        caption: caption,
-        profileImage: session?.user?.image,
-        company: session?.user?.email,
-        timestamp: serverTimestamp() as Timestamp,
-      });
-
-      if (selectedFile) {
-        const imageRef = ref(storage, `posts/${docRef.id}/image`);
-
-        await uploadString(imageRef, selectedFile as string, "data_url").then(
-          async (snapshot) => {
-            const downloadUrl = await getDownloadURL(imageRef);
-            await updateDoc(doc(firestore, "posts", docRef.id), {
-              image: downloadUrl,
-            });
+      const formData = new FormData();
+        if (selectedFile) {
+          if (selectedFile.startsWith("data:")) {
+            const fileBlob = base64ToBlob(selectedFile);
+            formData.append("file", fileBlob);
+          } else {
+            if (selectedFileRef.current?.files && selectedFileRef.current.files[0]) {
+              formData.append("file", selectedFileRef.current.files[0]);
+            } else {
+              console.log("No valid file selected");
+            }
           }
-        );
-      } else {
-        console.log("No Image");
-      }
+        } else {
+            console.log("No Image");
+        }
+
+        formData.append("uid", user?.uid || "");
+        formData.append("username", user?.username || "");
+        formData.append("caption", caption);
+
+        const response = await createPost(formData);
+        console.log("Post created successfully", response);
     } catch (error) {
       console.log(error);
     }
+
     setSelectedFile("");
     setCaption("");
     setLoading(false);
@@ -165,7 +165,7 @@ const PostModal: React.FC<PostModalProps> = ({ open, setOpen }) => {
                 font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2
                 focus:ring-offset-2 focus:ring-red-500 sm:text-sm disabled:bg-gray-300
                 disabled:cursor-not-allowed hover:disabled:bg-gray-300"
-                      onClick={handleCreateCommunity}
+                      onClick={handleCreatePost}
                     >
                       Post
                     </button>

@@ -1,17 +1,18 @@
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
-import { UserData } from "../../typings";
 import Intro from "./Intro";
 import ProfileFeed from "./ProfileFeed";
 import ProfileHeader from "./ProfileHeader";
 import Tag from "./Tag";
+import {useRecoilValue} from "recoil";
+import {backendUserState, userState} from "../../utils/atoms";
+import {LoginResponse} from "../../pages/api/types/LoginResponse";
 
 type Props = {};
 
 export default function MainProfile({}: Props) {
-  const { data: session } = useSession();
+  const user = useRecoilValue(backendUserState);
   const router = useRouter();
   const { userId } = router.query;
   const [userData, setUserData] = useState({});
@@ -21,10 +22,10 @@ export default function MainProfile({}: Props) {
   const filterUserData = () => {
     try {
       userDetails.map((data) => {
-        if (data.data().userId === userId) {
+        if (user?.uid === userId) {
           setUserData(data.data());
 
-          if (data.data().username === session?.user?.name) {
+          if (data.data().username === user?.username) {
             setIsShow(true);
           }
         }
@@ -41,11 +42,11 @@ export default function MainProfile({}: Props) {
   return (
     <main className="bg-gray-100 bg-opacity-25">
       <div className="lg:w-8/12 lg:mx-auto mb-8">
-        <ProfileHeader isShow={isShow} userData={userData as UserData} />
+        <ProfileHeader isShow={isShow} userData={userData as LoginResponse} />
         <Tag />
         <div className="px-px md:px-3">
           <Intro />
-          <ProfileFeed userId={userId as string} setUserData={setUserDetails} />
+          <ProfileFeed userId={user?.uid as string} setUserData={setUserDetails} />
         </div>
       </div>
     </main>

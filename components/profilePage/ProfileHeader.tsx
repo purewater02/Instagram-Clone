@@ -3,18 +3,18 @@ import { faker } from "@faker-js/faker";
 import AvatarSkeleton from "../Skeleton/AvatarSkeleton";
 import { motion } from "framer-motion";
 
-import { UserData } from "../../typings";
+import {LoginResponse} from "../../pages/api/types/LoginResponse";
 
 type ProfileHeaderProps = {
   isShow: boolean;
-  userData: UserData;
+  userData: LoginResponse;
 };
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({ isShow, userData }) => {
   return (
     <header className="flex flex-wrap items-center p-4 md:py-8">
       <div className="md:w-3/12 md:ml-16">
-        {userData.profileImage ? (
+        {userData.photoURL ? (
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -22,7 +22,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ isShow, userData }) => {
           >
             <img
               className="w-20 h-20 md:w-40 md:h-40 object-cover rounded-full border-2 border-pink-600 p-1"
-              src={userData.profileImage}
+              src={userData.photoURL}
               alt="profile"
             />
           </motion.div>
@@ -91,14 +91,14 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ isShow, userData }) => {
           </li>
         </ul>
 
-        <div className="hidden md:block">
-          <h1 className="font-semibold">{userData.company}</h1>
-          <span className="bioclassName">{faker.company.name()}</span>
-          <p>{faker.commerce.productDescription()}</p>
-          <span>
-            <strong>{faker.internet.domainName()}</strong>
-          </span>
-        </div>
+        {/*<div className="hidden md:block">*/}
+        {/*  <h1 className="font-semibold">{userData.company}</h1>*/}
+        {/*  <span className="bioclassName">{faker.company.name()}</span>*/}
+        {/*  <p>{faker.commerce.productDescription()}</p>*/}
+        {/*  <span>*/}
+        {/*    <strong>{faker.internet.domainName()}</strong>*/}
+        {/*  </span>*/}
+        {/*</div>*/}
       </div>
 
       <div className="md:hidden text-sm my-2">

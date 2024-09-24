@@ -1,51 +1,49 @@
-import { doc, getDoc, setDoc } from "firebase/firestore";
 import { motion } from "framer-motion";
-import { getSession } from "next-auth/react";
 import Head from "next/head";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
-import { Session } from "next-auth";
 import Feed from "../components/Feed";
 import Header from "../components/Header";
-import { firestore } from "../firebase/firebase";
+import {createUserInBack, getUserFromBack} from "./api/userApi";
+import {useFirebaseAuth} from "../hooks/useFirebaseAuth";
 
-type Props = {
-  session: Session;
-};
-
-const Home = ({ session }: Props) => {
-  const [userCreates, setUserCreate] = useState<boolean>(false);
+const Home: React.FC = () => {
+  const { user, backendUser } = useFirebaseAuth(); // firebase login 상태 전역 관리.
+  const [userCreated, setUserCreated] = useState<boolean>(false);
 
   const getUserData = async () => {
-    if (session) {
-      try {
-        const docRef = doc(firestore, "users", session?.user?.uid);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          console.log("User Already Created");
-          setUserCreate(false);
-        } else {
-          setUserCreate(true);
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    } else return;
+    console.log("Recoil user: ", user);
+    if (user && backendUser) {
+        console.log("getUserData: ", user);
+        console.log("User already created");
+        setUserCreated(false);
+    } else {
+    console.log("User not found, creating user");
+    setUserCreated(true);
+    return;
+    }
   };
 
-  const userCreate = async (session: Session) => {
-    const userDocRef = doc(firestore, "users", session?.user?.uid);
-    await setDoc(userDocRef, JSON.parse(JSON.stringify(session)));
+  const createUser = async () => {
+    if (userCreated && user && !backendUser) {
+      try {
+        await createUserInBack().finally(() => window.location.reload());
+         // 유저 생성 후 백엔드 유저 정보를 갱신을 못함. 부득이하게 리로드.
+      } catch (error) {
+        console.error("Error creating user", error);
+      }
+    }
   };
 
   useEffect(() => {
     getUserData();
+  }, [user, backendUser]);
 
-    if (userCreates) {
-      userCreate(session);
+  useEffect(() => {
+    if (userCreated) {
+      createUser();
     } else return;
-  }, [session, firestore, userCreates]);
+  }, [userCreated]);
 
   return (
     <motion.div
@@ -62,19 +60,9 @@ const Home = ({ session }: Props) => {
         />
       </Head>
       <Header />
-      <Feed session={session} />
+      <Feed user={user} />
     </motion.div>
   );
 };
 
 export default Home;
-
-export async function getServerSideProps(context: any) {
-  const session = await getSession(context);
-
-  return {
-    props: {
-      session: session,
-    },
-  };
-}
