@@ -1,14 +1,13 @@
-import {Session} from "next-auth";
 import React from "react";
 
 import MiniProfile from "./MiniProfile";
 import Posts from "./Posts";
 import Stories from "./Stories";
 import Suggestions from "./Suggestions";
-import {User} from "firebase/auth";
+import {LoginResponse} from "../pages/api/types/LoginResponse";
 
 type FeedProps = {
-    user?: User | null
+    user?: LoginResponse | null;
 };
 
 const Feed: React.FC<FeedProps> = ({user}) => {

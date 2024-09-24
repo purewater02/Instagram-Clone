@@ -1,14 +1,10 @@
 import { motion } from "framer-motion";
 import Head from "next/head";
 import React from "react";
-import {useRecoilState, useRecoilValue} from "recoil";
-import {backendUserState, userState} from "../../utils/atoms";
 import { loginWithGoogle } from "../../firebase/firebase";
 
 import Header from "../../components/Header";
 import {useRouter} from "next/router";
-import {getAuth} from "firebase/auth";
-import {getUserFromBack} from "../api/userApi";
 
 const Login: React.FC = () => {
   const router = useRouter();

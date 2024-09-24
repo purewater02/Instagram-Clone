@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 
 import Feed from "../components/Feed";
 import Header from "../components/Header";
-import {createUserInBack, getUserFromBack} from "./api/userApi";
+import {createUserInBack} from "./api/userApi";
 import {useFirebaseAuth} from "../hooks/useFirebaseAuth";
 
 const Home: React.FC = () => {
@@ -60,7 +60,7 @@ const Home: React.FC = () => {
         />
       </Head>
       <Header />
-      <Feed user={user} />
+      <Feed user={backendUser} />
     </motion.div>
   );
 };
