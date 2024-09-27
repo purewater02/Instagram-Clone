@@ -4,11 +4,12 @@ import Box from "@mui/material/Box";
 import Modal from "@mui/material/Modal";
 import Typography from "@mui/material/Typography";
 import React, { useRef, useState } from "react";
-import { createPost } from "../../pages/api/postApi";
+import {createPost, uploadImages} from "../../pages/api/postApi";
 
 import useSelectFile from "../../hooks/useSelectFile";
 import {useRecoilValue} from "recoil";
 import {backendUserState, userState} from "../../utils/atoms";
+import {CreatePostRequest} from "../../pages/api/types/requestTypes";
 
 const style = {
   position: "absolute" as "absolute",
@@ -28,51 +29,48 @@ type PostModalProps = {
 
 const PostModal: React.FC<PostModalProps> = ({ open, setOpen }) => {
   const user = useRecoilValue(backendUserState);
-  const { selectedFile, setSelectedFile, onSelectedFile } = useSelectFile();
+  const { selectedFiles, setSelectedFiles, onSelectedFile } = useSelectFile();
   const selectedFileRef = useRef<HTMLInputElement>(null);
   const [caption, setCaption] = useState("");
   const [loading, setLoading] = useState(false);
+  const [postState, setPostState] = useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
-
-  const base64ToBlob = (base64String: string) => {
-    const parts = base64String.split(",");
-    const mimeType = parts[0].match(/:(.*?);/)?.[1] || ""; // MIME 타입 추출
-    const binary = Buffer.from(parts[1], "base64"); // Base64 부분을 Buffer로 변환
-
-    return new Blob([binary], { type: mimeType });
-  };
 
   const handleCreatePost = async () => {
     setLoading(true);
     try {
       const formData = new FormData();
-        if (selectedFile) {
-          if (selectedFile.startsWith("data:")) {
-            const fileBlob = base64ToBlob(selectedFile);
-            formData.append("file", fileBlob);
+      selectedFiles.forEach((file, index) => {
+          if (selectedFileRef.current?.files && selectedFileRef.current.files[index]) {
+            formData.append("images", selectedFileRef.current.files[index]);
           } else {
-            if (selectedFileRef.current?.files && selectedFileRef.current.files[0]) {
-              formData.append("file", selectedFileRef.current.files[0]);
-            } else {
-              console.log("No valid file selected");
-            }
+            console.log("No valid file selected");
           }
-        } else {
-            console.log("No Image");
+      })
+
+      const response = await uploadImages(formData);
+
+      const body: CreatePostRequest = {
+        images: response.urls,
+        caption: caption
+      }
+
+      try {
+        const response = await createPost(body);
+        if (response) {
+          setPostState(true);
+          console.log("Post created successfully", response);
         }
+      } catch (error) {
+        console.log("createPost error: ", error);
+      }
 
-        formData.append("uid", user?.uid || "");
-        formData.append("username", user?.username || "");
-        formData.append("caption", caption);
-
-        const response = await createPost(formData);
-        console.log("Post created successfully", response);
     } catch (error) {
-      console.log(error);
+      console.log("handleCreatePost error: ", error);
     }
 
-    setSelectedFile("");
+    setSelectedFiles([]);
     setCaption("");
     setLoading(false);
     handleClose();
@@ -96,13 +94,18 @@ const PostModal: React.FC<PostModalProps> = ({ open, setOpen }) => {
             sm:align-middle sm:w-full sm:p-8"
             >
               <div>
-                {selectedFile ? (
-                  <img
-                    src={selectedFile}
-                    className="w-full object-contain cursor-pointer"
-                    onClick={() => setSelectedFile("")}
-                    alt=""
-                  />
+                {selectedFiles.length > 0 ? (
+                    <div className={`grid grid-cols-3 gap-2`}>
+                      {selectedFiles.map((file, index) => (
+                        <img
+                          key={index}
+                          src={file}
+                          className="w-full object-contain cursor-pointer"
+                          onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))}
+                          alt={`Selected file ${index + 1}`}
+                        />
+                      ))}
+                    </div>
                 ) : (
                   <div
                     className="mx-auto flex items-center justify-center h-12
@@ -118,7 +121,7 @@ const PostModal: React.FC<PostModalProps> = ({ open, setOpen }) => {
 
                 <div>
                   <div className="mt-3 text-center sm:mt-5">
-                    {!selectedFile && (
+                    {!selectedFiles.length && (
                       <Typography className="text-lg leading-6 font-medium text-green-900">
                         Upload a Photo
                       </Typography>
@@ -128,7 +131,8 @@ const PostModal: React.FC<PostModalProps> = ({ open, setOpen }) => {
                         ref={selectedFileRef}
                         type="file"
                         hidden
-                        onChange={onSelectedFile}
+                        multiple
+                        onChange={(e) => onSelectedFile(e, true)}
                       />
                     </div>
                     <div className="mt-2">
@@ -159,7 +163,7 @@ const PostModal: React.FC<PostModalProps> = ({ open, setOpen }) => {
                   ) : (
                     <button
                       type="button"
-                      disabled={!selectedFile}
+                      disabled={!selectedFiles.length}
                       className="inline-flex justify-center w-full rounded-md 
                 border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base
                 font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2

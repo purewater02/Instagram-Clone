@@ -1,5 +1,5 @@
 import api from "./api";
-import {LoginResponse} from "./types/LoginResponse";
+import {LoginResponse} from "./types/responseTypes";
 
 export const getUserFromBack = async (idToken: string): Promise<LoginResponse> => {
     try {
@@ -17,7 +17,7 @@ export const getUserFromBack = async (idToken: string): Promise<LoginResponse> =
     }
 };
 
-export const createUserInBack = async () => {
+export const createUserInBack = async (): Promise<LoginResponse> => {
     try {
         // 계정 생성에 필요한 내용은 firebaseToken에서 가져올것임.
         console.log("createUserInBack")

@@ -6,8 +6,8 @@ import ProfileFeed from "./ProfileFeed";
 import ProfileHeader from "./ProfileHeader";
 import Tag from "./Tag";
 import {useRecoilValue} from "recoil";
-import {backendUserState, userState} from "../../utils/atoms";
-import {LoginResponse} from "../../pages/api/types/LoginResponse";
+import {backendUserState} from "../../utils/atoms";
+import {LoginResponse} from "../../pages/api/types/responseTypes";
 
 type Props = {};
 
@@ -25,7 +25,7 @@ export default function MainProfile({}: Props) {
         if (user?.uid === userId) {
           setUserData(data.data());
 
-          if (data.data().username === user?.username) {
+          if (data.data().username === user?.name) {
             setIsShow(true);
           }
         }

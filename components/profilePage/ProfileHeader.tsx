@@ -3,7 +3,7 @@ import { faker } from "@faker-js/faker";
 import AvatarSkeleton from "../Skeleton/AvatarSkeleton";
 import { motion } from "framer-motion";
 
-import {LoginResponse} from "../../pages/api/types/LoginResponse";
+import {LoginResponse} from "../../pages/api/types/responseTypes";
 
 type ProfileHeaderProps = {
   isShow: boolean;
@@ -39,7 +39,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ isShow, userData }) => {
       <div className="w-8/12 md:w-7/12 ml-4">
         <div className="md:flex md:flex-wrap md:items-center mb-4">
           <h2 className="text-3xl inline-block font-semibold md:mr-2 mb-2 sm:mb-0">
-            {userData.username}
+            {userData.name}
           </h2>
 
           <span

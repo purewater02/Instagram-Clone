@@ -4,7 +4,7 @@ import MiniProfile from "./MiniProfile";
 import Posts from "./Posts";
 import Stories from "./Stories";
 import Suggestions from "./Suggestions";
-import {LoginResponse} from "../pages/api/types/LoginResponse";
+import {LoginResponse} from "../pages/api/types/responseTypes";
 
 type FeedProps = {
     user?: LoginResponse | null;
