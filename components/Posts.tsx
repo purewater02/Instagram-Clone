@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useRef, useState} from "react";
 import Post from "./Post";
 
 import PostSkeleton from "./Skeleton/Skeleton";
@@ -13,33 +13,34 @@ const Posts: React.FC<PostsProps> = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [page, setPage] = useState<number>(0);
-  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [hasNext, setHasNext] = useState<boolean>(true);
+  const initialRender = useRef(true); // 초기 렌더링 시 fetchPost() 2연속 실행 해결
 
   const fetchPost = async () => {
     try {
       setLoading(true);
 
       const response = user ? await fetchPosts(page, 2) : await fetchPublicPosts(page, 2); // 테스트용으로 작게 요청
-      if (response.length > 0) {
-        setPosts((prevPosts) => [...prevPosts, ...response]);
-      } else {
-        setHasMore(false);
-      }
+      setPosts((prevPosts) => [...prevPosts, ...response.data]);
+      setHasNext(response.hasNext);
 
       setLoading(false);
-
     } catch (error: any) {
       console.log(error.message);
     }
   };
 
   useEffect(() => {
-    fetchPost();
+    if (initialRender.current) {
+      initialRender.current = false;
+    } else if (hasNext) {
+      fetchPost();
+    }
   }, [page]);
 
   const handleScroll = () => {
     if (window.innerHeight + document.documentElement.scrollTop !== document.documentElement.offsetHeight) return;
-    if (hasMore && !loading) {
+    if (hasNext && !loading) {
       setPage((prevPage) => prevPage + 1);
     }
   }
@@ -47,7 +48,7 @@ const Posts: React.FC<PostsProps> = () => {
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [hasMore, loading]);
+  }, [hasNext, loading]);
 
   return (
     <div>
@@ -56,8 +57,8 @@ const Posts: React.FC<PostsProps> = () => {
           key={post.id}
           id={post.id}
           userId={post.userId}
-          username={post.username}
-          userImage={post.profileImage}
+          username={post.username as string}
+          userImage={post.userImage as string}
           images={post.images}
           caption={post.caption}
         />

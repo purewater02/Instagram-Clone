@@ -1,23 +1,17 @@
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  setDoc,
-} from "firebase/firestore";
 import { motion } from "framer-motion";
 import moment from "moment";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 
-import { firestore } from "../firebase/firebase";
 import {useRecoilValue} from "recoil";
 import {backendUserState} from "../utils/atoms";
-import {createComment, dislikePost, fetchPostLikes, fetchPosts, fetchPublicPosts, likePost} from "../pages/api/postApi";
+import {
+  createComment,
+  dislikePost,
+  fetchPostComments,
+  fetchPostLikes,
+  likePost
+} from "../pages/api/postApi";
 
 type PostProps = {
   id: number;
@@ -36,10 +30,14 @@ const Post: React.FC<PostProps> = ({
   caption,
   userId,
 }) => {
+  console.log(`userImage: ${userImage}, username: ${username}, images: ${images}, caption: ${caption}, userId: ${userId}`);
+
   const user = useRecoilValue(backendUserState);
   const router = useRouter();
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState<any[]>([]);
+  const [page, setPage] = useState<number>(0);
+  const [hasNext, setHasNext] = useState<boolean>(true);
   const [likes, setLikes] = useState<any[]>([]);
   const [hasLiked, setHasLiked] = useState(false);
   const [loading, setLoading] = useState<boolean>(false);
@@ -54,7 +52,7 @@ const Post: React.FC<PostProps> = ({
           comment
         }
         const response = await createComment(request)
-        setComments([...comments, response]);
+        setComments((prev) => [...prev, ...response]);
         setComment("");
       } catch (error) {
         console.log(error);
@@ -66,12 +64,8 @@ const Post: React.FC<PostProps> = ({
 
   const fetchComments = async () => {
     try {
-      if (user) {
-        const response = await fetchPosts();
-        setComments(response);
-      } else {
-        const response = await fetchPublicPosts();
-      }
+        // const response = await fetchPostComments(id, page, 5);
+        // setComments((prevComments) => [...prevComments, ...response.data]);
     } catch (error) {
         console.log(error);
     }
@@ -102,6 +96,8 @@ const Post: React.FC<PostProps> = ({
       setLoading(false);
     }
   }
+
+  //TODO 댓글 더보기 기능
 
   useEffect(() => {
       fetchComments();

@@ -29,6 +29,7 @@ export const createPost = async (requestBody: CreatePostRequest) => {
 export const fetchPosts = async (page: number, size: number) => {
     try {
         const response = await api.get(`/posts?page=${page}&size=${size}`);
+        console.log("fetchPosts: ", response.data)
         return response.data;
     } catch (error) {
         console.error("Error fetching posts: ", error);
@@ -38,7 +39,8 @@ export const fetchPosts = async (page: number, size: number) => {
 
 export const fetchPublicPosts = async (page: number, size: number) => {
     try {
-        const response = await api.get("/posts/public?page=${page}&size=${size}");
+        const response = await api.get(`/posts/public?page=${page}&size=${size}`);
+        console.log("fetchPublicPosts: ", response.data)
         return response.data;
     } catch (error) {
         console.error("Error fetching public posts: ", error);
@@ -58,7 +60,7 @@ export const createComment = async (requestBody: CreateCommentRequest) => {
 
 export const fetchPostLikes = async (postId: number) => {
     try {
-        const response = await api.get(`/posts/${postId}/likes`);
+        const response = await api.get(`/posts/public/${postId}/likes`);
         return response.data;
     } catch (error) {
         console.error("Error fetching post likes: ", error);
@@ -82,6 +84,16 @@ export const likePost = async (postId: number) => {
         return response.data;
     } catch (error) {
         console.error("Error liking post: ", error);
+        throw error;
+    }
+}
+
+export const fetchPostComments = async (postId: number, page: number, size: number) => {
+    try {
+        const response = await api.get(`/posts/public/${postId}/comments?page=${page}&size=${size}`);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching post comments: ", error);
         throw error;
     }
 }

@@ -1,13 +1,13 @@
 import {useEffect} from "react";
-import {getAuth, onAuthStateChanged} from "@firebase/auth";
+import {onAuthStateChanged} from "@firebase/auth";
 import {useRecoilState} from "recoil";
 import {backendUserState, userState} from "../utils/atoms";
 import {getUserFromBack} from "../pages/api/userApi";
+import { auth } from "../firebase/firebase";
 
 export const useFirebaseAuth = () => {
     const [user, setUser] = useRecoilState(userState);
     const [backendUser, setBackendUser] = useRecoilState(backendUserState);
-    const auth = getAuth();
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
