@@ -3,4 +3,8 @@ interface CreatePostRequest {
     caption: string;
 }
 
-export type {CreatePostRequest};
+interface CreateCommentRequest {
+    comment: string;
+}
+
+export type { CreatePostRequest, CreateCommentRequest };

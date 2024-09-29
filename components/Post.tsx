@@ -15,12 +15,15 @@ import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 
 import { firestore } from "../firebase/firebase";
+import {useRecoilValue} from "recoil";
+import {backendUserState} from "../utils/atoms";
+import {createComment, dislikePost, fetchPostLikes, fetchPosts, fetchPublicPosts, likePost} from "../pages/api/postApi";
 
 type PostProps = {
-  id: string;
+  id: number;
   username: string;
   userImage: string;
-  img: string;
+  images: string[];
   caption: string;
   userId: string;
 };
@@ -29,91 +32,87 @@ const Post: React.FC<PostProps> = ({
   id,
   username,
   userImage,
-  img,
+  images,
   caption,
   userId,
 }) => {
-  const { data: session } = useSession();
+  const user = useRecoilValue(backendUserState);
   const router = useRouter();
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState<any[]>([]);
   const [likes, setLikes] = useState<any[]>([]);
-  const [hasLikes, setHasLikes] = useState(false);
+  const [hasLiked, setHasLiked] = useState(false);
   const [loading, setLoading] = useState<boolean>(false);
 
   const sendComment = async (e: any) => {
     e.preventDefault();
 
-    if (comment) {
+    if (comment.trim()) {
       setLoading(true);
       try {
-        await addDoc(collection(firestore, "posts", id, "comments"), {
-          comment: comment,
-          username: session?.user?.name,
-          userImage: session?.user?.image,
-          timestamp: serverTimestamp(),
-        });
-
-        setLoading(false);
+        const request = {
+          comment
+        }
+        const response = await createComment(request)
+        setComments([...comments, response]);
+        setComment("");
       } catch (error) {
         console.log(error);
+      } finally {
+        setLoading(false);
       }
-
-      setComment("");
-    } else {
-      console.log("err");
     }
-  };
+  }
 
-  useEffect(
-    () =>
-      onSnapshot(
-        query(
-          collection(firestore, "posts", id, "comments"),
-          orderBy("timestamp", "desc")
-        ),
-        (snapshot) => setComments(snapshot.docs)
-      ),
-    [firestore, id]
-  );
-
-  useEffect(
-    () =>
-      onSnapshot(collection(firestore, "posts", id, "likes"), (snapshot) =>
-        setLikes(snapshot.docs)
-      ),
-    [firestore, id]
-  );
-
-  useEffect(
-    () =>
-      setHasLikes(
-        likes.findIndex((like) => like.id === session?.user?.uid) !== -1
-      ),
-    [likes]
-  );
-
-  const likePost = async () => {
+  const fetchComments = async () => {
     try {
-      if (hasLikes) {
-        await deleteDoc(
-          doc(firestore, "posts", id, "likes", session?.user?.uid!)
-        );
+      if (user) {
+        const response = await fetchPosts();
+        setComments(response);
       } else {
-        await setDoc(
-          doc(firestore, "posts", id, "likes", session?.user?.uid!),
-          {
-            username: session?.user?.name,
-          }
-        );
+        const response = await fetchPublicPosts();
       }
     } catch (error) {
-      console.log(error);
+        console.log(error);
     }
-  };
+  }
+
+  const fetchLikes = async () => {
+    try {
+      const response = await fetchPostLikes(id);
+      setLikes(response);
+      setHasLiked(response.some((like: any) => like.userId === user?.uid));
+    } catch (error) {
+        console.log(error);
+    }
+  }
+
+  const handleLikePost = async () => {
+    setLoading(true);
+    try {
+      if (hasLiked) {
+        const response = await dislikePost(id);
+      } else {
+        const response = await likePost(id);
+      }
+      await fetchLikes();
+    } catch (error) {
+        console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+      fetchComments();
+      }, [id]);
+
+  useEffect(() => {
+      fetchLikes()
+    }, [id, likes]);
 
   const handleChangePage = () => {
-    if (session) {
+    if (user) {
       router.push({
         pathname: `profile/${userId}`,
         query: {
@@ -161,11 +160,20 @@ const Post: React.FC<PostProps> = ({
           />
         </svg>
       </div>
-      <img src={img} className="object-cover w-full" alt="" />
-      {session && (
+      <div className={"flex overflow-x-scroll"}>
+        {images.map((image, index) => (
+          <img
+            key={index}
+            src={image}
+            className="w-1/3 h-96 object-cover"
+            alt=""
+          />
+        ))}
+      </div>
+      {user && (
         <div className="flex justify-between px-4 pt-4">
           <div className="flex space-x-4">
-            {hasLikes ? (
+            {hasLiked ? (
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
@@ -174,7 +182,7 @@ const Post: React.FC<PostProps> = ({
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
                   fill="currentColor"
-                  onClick={likePost}
+                  onClick={handleLikePost}
                   className="btn text-red-500"
                 >
                   <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
@@ -191,7 +199,7 @@ const Post: React.FC<PostProps> = ({
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
-                  onClick={likePost}
+                  onClick={handleLikePost}
                   className="btn"
                 >
                   <path
@@ -281,16 +289,16 @@ const Post: React.FC<PostProps> = ({
             >
               <img
                 className="h-7 rounded-full"
-                src={comment.data().userImage}
+                src={comment.profileImage}
                 alt=""
               />
               <p className="text-sm flex-1">
-                <span className="font-bold">{comment.data().username} </span>
-                {comment.data().comment}
+                <span className="font-bold">{comment.username} </span>
+                {comment.comment}
               </p>
               <p className="pr-5 text-xs">
                 {moment(
-                  new Date(comment.data().timestamp?.seconds * 1000)
+                  moment(comment.updatedAt)
                 ).fromNow()}
               </p>
             </div>
@@ -298,7 +306,7 @@ const Post: React.FC<PostProps> = ({
         </div>
       )}
 
-      {session && (
+      {user && (
         <form className="flex items-center p-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
