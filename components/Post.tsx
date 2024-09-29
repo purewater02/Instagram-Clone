@@ -12,6 +12,7 @@ import {
   fetchPostLikes,
   likePost
 } from "../pages/api/postApi";
+import ImageSlider from "../utils/ImageSlider";
 
 type PostProps = {
   id: number;
@@ -156,15 +157,8 @@ const Post: React.FC<PostProps> = ({
           />
         </svg>
       </div>
-      <div className={"flex overflow-x-scroll"}>
-        {images.map((image, index) => (
-          <img
-            key={index}
-            src={image}
-            className="w-1/3 h-96 object-cover"
-            alt=""
-          />
-        ))}
+      <div>
+        <ImageSlider images={images} />
       </div>
       {user && (
         <div className="flex justify-between px-4 pt-4">
