@@ -18,6 +18,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images }) => {
         arrows: images.length > 1,      // 좌우 화살표 표시
     };
 
+    // 왜 빨간줄?? 정상동작하는데? 뭔데??
     return (
             <Slider {...settings}>
                 {images.map((image, index) => (
